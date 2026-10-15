@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fine Dishes Hotel | Isiolo Town, Kenya</title>
+<meta name="description" content="Fine Dishes Hotel, Isiolo Town: Kenyan favourites and international cuisine. Book a table online.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header><div class="wrap"><nav>
+  <a class="logo" href="#/">Fine Dishes Hotel</a>
+  <button id="burger" aria-label="Menu">☰</button>
+  <ul id="links">
+    <li><a href="#/">Home</a></li><li><a href="#about">About Us</a></li><li><a href="#menu">Our Menu</a></li>
+    <li><a href="#gallery">Gallery</a></li><li><a href="#/reserve">Reservations</a></li><li><a href="#contact">Contact</a></li>
+    <li id="authLinks"></li>
+  </ul>
+</nav></div></header>
+
+<div id="home">
+  <div class="hero"><div class="wrap">
+    <h1>Welcome to Fine Dishes Hotel</h1>
+    <p>Experience the Taste of Excellence — From Local Kenyan Favourites to International Cuisine.</p>
+    <div class="btns"><a class="btn" href="#menu">Explore Our Menu</a><a class="btn" href="#/reserve">Book a Table</a><a class="btn alt" href="#contact">Contact Us</a></div>
+  </div></div>
+
+  <section id="about"><div class="wrap">
+    <div class="title"><h2>About Fine Dishes Hotel</h2></div>
+    <p class="about">Fine Dishes Hotel is a welcoming dining destination in Isiolo Town, serving Kenyan favourites and meals inspired by international cuisines, for locals and visitors alike.</p>
+    <div class="grid">
+      <div class="card feat"><div class="ic">🍳</div><h3>Freshly Prepared</h3><p>Meals prepared fresh for you.</p></div>
+      <div class="card feat"><div class="ic">🍽️</div><h3>Wide Variety</h3><p>Local and international dishes.</p></div>
+      <div class="card feat"><div class="ic">🤝</div><h3>Friendly Service</h3><p>Warm, attentive customer care.</p></div>
+      <div class="card feat"><div class="ic">🌍</div><h3>Locals &amp; Visitors</h3><p>A dining experience for everyone.</p></div>
+    </div>
+  </div></section>
+
+  <section class="alt-bg" id="featured"><div class="wrap">
+    <div class="title"><h2>Featured Meals</h2></div>
+    <div class="grid" id="featGrid"></div>
+    <p class="note">Prices marked “sample” are placeholders until confirmed by the hotel.</p>
+  </div></section>
+
+  <section id="menu"><div class="wrap">
+    <div class="title"><h2>Our Menu</h2></div>
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="menuGrid"></div>
+  </div></section>
+
+  <section class="alt-bg" id="gallery"><div class="wrap">
+    <div class="title"><h2>Food Gallery</h2></div>
+    <div class="gal" id="galGrid"></div>
+  </div></section>
+
+  <section class="dark-bg"><div class="wrap">
+    <div class="title"><h2>Why Choose Us?</h2></div>
+    <div class="grid">
+      <div class="card feat" style="background:var(--green2)"><div class="ic">🥘</div><h3 style="color:var(--gold2)">Variety of Meals</h3></div>
+      <div class="card feat" style="background:var(--green2)"><div class="ic">😊</div><h3 style="color:var(--gold2)">Welcoming Service</h3></div>
+      <div class="card feat" style="background:var(--green2)"><div class="ic">📍</div><h3 style="color:var(--gold2)">Convenient Location</h3><p>In Isiolo Town</p></div>
+      <div class="card feat" style="background:var(--green2)"><div class="ic">📅</div><h3 style="color:var(--gold2)">Easy Online Booking</h3></div>
+    </div>
+  </div></section>
+
+  <section id="contact"><div class="wrap">
+    <div class="title"><h2>Contact Us</h2></div>
+    <div class="contact">
+      <div class="card" id="contactInfo"></div>
+      <form class="card" id="contactForm">
+        <h3>Send an Enquiry</h3>
+        <label>Name</label><input name="name" required maxlength="100">
+        <label>Email</label><input name="email" type="email" required>
+        <label>Message</label><textarea name="message" rows="4" required minlength="5"></textarea>
+        <button class="btn dark">Send Message</button><div class="msg" hidden></div>
+      </form>
+    </div>
+  </div></section>
+</div>
+
+<main id="view" class="wrap" hidden></main>
+<footer><div class="wrap">
+  <p><strong>Fine Dishes Hotel</strong> · <span id="fAddr">Isiolo Town, Kenya</span> · <a id="fTel" href="tel:0704519961">0704519961</a></p>
+  <p id="fHours"></p>
+  <p style="margin-top:8px"><a href="#/">Home</a><a href="#menu">Menu</a><a href="#gallery">Gallery</a><a href="#/reserve">Reservations</a><a href="#contact">Contact</a></p>
+  <p style="margin-top:8px;opacity:.7">© <span id="yr"></span> Fine Dishes Hotel. All rights reserved.</p>
+</div></footer>
+<dialog id="dlg"></dialog>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const kes = n => 'KES ' + Number(n).toLocaleString('en-KE');
+let user = null, cfg = {}, menu = {categories: [], items: []}, cat = 0, after = '#/reserve';
+
+async function api(u, o = {}) {
+  const fd = o.body instanceof FormData;
+  const r = await fetch('/api' + u, {credentials: 'same-origin', ...o, headers: fd ? {} : {'Content-Type': 'application/json'}, body: o.body && !fd ? JSON.stringify(o.body) : o.body});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw d; return d;
+}
+function toast(t) { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', 3200); }
+const fail = e => toast(e.error || 'Something went wrong. Please try again.');
+function show(el, text, ok) { el.hidden = false; el.className = 'msg ' + (ok ? 'ok' : 'err'); el.textContent = text; }
+function formData(f) { return Object.fromEntries(new FormData(f)); }
+
+/* ---------- navigation ---------- */
+$('#burger').onclick = () => $('#links').classList.toggle('open');
+$('#links').onclick = e => { if (e.target.closest('a')) $('#links').classList.remove('open'); };
+function renderAuthLinks() {
+  $('#authLinks').outerHTML = '<li id="authLinks"></li>';
+  $('#authLinks').innerHTML = user
+    ? `${user.role === 'admin' ? '<a href="#/admin">Admin</a>' : '<a href="#/my">My Bookings</a>'}<a href="#" id="logout">Logout (${esc(user.name.split(' ')[0])})</a>`
+    : '<a href="#/login">Login</a><a class="cta" href="#/register">Register</a>';
+  const lo = $('#logout'); if (lo) lo.onclick = async e => { e.preventDefault(); await api('/logout', {method: 'POST'}); user = null; renderAuthLinks(); toast('You have been logged out.'); location.hash = '#/'; };
+}
+async function route() {
+  const h = location.hash.slice(1) || '/', [p, qs] = h.split('?');
+  const v = $('#view');
+  if (!p.startsWith('/') || p === '/') { v.hidden = true; $('#home').hidden = false; if (p !== '/') setTimeout(() => document.getElementById(p)?.scrollIntoView(), 30); else scrollTo(0, 0); return; }
+  $('#home').hidden = true; v.hidden = false; scrollTo(0, 0);
+  const pages = {'/login': loginView, '/register': registerView, '/forgot': forgotView, '/reset': () => resetView(new URLSearchParams(qs).get('token')), '/reserve': reserveView, '/my': myView, '/admin': adminView};
+  if (['/reserve', '/my', '/admin'].includes(p) && !user) { after = '#' + p; toast('Please log in to continue.'); return location.hash = '#/login'; }
+  if (p === '/admin' && user.role !== 'admin') { toast('Administrators only.'); return location.hash = '#/'; }
+  (pages[p] || (() => v.innerHTML = '<div class="box"><h2>Page not found</h2><a class="btn dark" href="#/">Go home</a></div>'))();
+}
+addEventListener('hashchange', route);
+
+/* ---------- public content ---------- */
+function mealCard(i, full) {
+  const c = menu.categories.find(c => c.id === i.category_id);
+  return `<div class="card meal"><div class="pic" ${i.image_url ? `style="background-image:url('${esc(i.image_url)}')"` : ''}>${i.image_url ? '' : esc(i.emoji)}</div>
+  <div class="in"><h3>${esc(i.name)}</h3><p>${esc(i.description)}</p>
+  <div class="price">${kes(i.price)} ${i.price_confirmed ? '' : '<small>(sample price)</small>'}</div>
+  <button class="btn sm dark" data-view="${i.id}">View Details</button></div></div>`;
+}
+function renderMenu() {
+  $('#featGrid').innerHTML = menu.items.filter(i => i.featured).map(mealCard).join('') || '<p class="empty">Menu coming soon.</p>';
+  $('#chips').innerHTML = `<button class="chip ${!cat ? 'on' : ''}" data-cat="0">All</button>` + menu.categories.map(c => `<button class="chip ${cat === c.id ? 'on' : ''}" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
+  $('#menuGrid').innerHTML = menu.items.filter(i => !cat || i.category_id === cat).map(mealCard).join('') || '<p class="empty">No items in this category yet.</p>';
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-cat]'); if (c) { cat = +c.dataset.cat; renderMenu(); }
+  const v = e.target.closest('[data-view]');
+  if (v) { const i = menu.items.find(x => x.id === +v.dataset.view), cn = menu.categories.find(c => c.id === i.category_id)?.name;
+    $('#dlg').innerHTML = `<h3 style="color:var(--green)">${esc(i.emoji)} ${esc(i.name)}</h3><p style="margin:6px 0;color:#777;font-size:.85rem">${esc(cn)}</p><p>${esc(i.description)}</p><p class="price" style="margin:10px 0">${kes(i.price)} ${i.price_confirmed ? '' : '<small>(sample price, to be confirmed by the hotel)</small>'}</p><a class="btn dark" href="#/reserve" onclick="$('#dlg').close()">Book a Table</a> <button class="btn sm" onclick="$('#dlg').close()">Close</button>`;
+    $('#dlg').showModal(); }
+});
+async function loadPublic() {
+  [cfg, menu] = await Promise.all([api('/settings'), api('/menu')]);
+  const g = await api('/gallery');
+  $('#galGrid').innerHTML = g.length ? g.map(x => `<img loading="lazy" src="/uploads/${encodeURIComponent(x.file)}" alt="${esc(x.alt_text)}">`).join('') : '<p class="empty" style="grid-column:1/-1">Gallery photos will appear here once the hotel uploads them.</p>';
+  renderMenu();
+  const tel = esc(cfg.phone), wa = cfg.whatsapp.replace(/\D/g, '');
+  $('#contactInfo').innerHTML = `<h3>${esc(cfg.hotel_name || 'Fine Dishes Hotel')}</h3><p>📍 ${esc(cfg.address)}</p><p>📞 <a href="tel:${tel}">${tel}</a></p>${cfg.hours ? `<p>🕒 ${esc(cfg.hours)}</p>` : ''}
+    <p style="margin-top:12px"><a class="btn sm" href="tel:${tel}">Call Now</a> ${wa ? `<a class="btn sm dark" target="_blank" rel="noopener" href="https://wa.me/${wa}">WhatsApp</a>` : ''}</p>
+    ${cfg.map_url ? `<iframe loading="lazy" title="Map" src="${esc(cfg.map_url)}"></iframe>` : '<p class="note">Map will be shown once the hotel confirms its location.</p>'}`;
+  $('#fAddr').textContent = cfg.address; $('#fTel').textContent = cfg.phone; $('#fTel').href = 'tel:' + cfg.phone;
+  $('#fHours').textContent = cfg.hours ? 'Opening hours: ' + cfg.hours : '';
+}
+$('#contactForm').onsubmit = async e => { e.preventDefault(); const m = e.target.querySelector('.msg');
+  try { const d = await api('/contact', {method: 'POST', body: formData(e.target)}); show(m, d.message, 1); e.target.reset(); } catch (x) { show(m, x.error || 'Could not send.'); } };
+
+/* ---------- auth views ---------- */
+const V = h => $('#view').innerHTML = h;
+function loginView() {
+  V(`<div class="box"><h2>Login</h2><form id="f"><label>Email</label><input name="email" type="email" required autocomplete="username">
+  <label>Password</label><input name="password" type="password" required autocomplete="current-password"><button class="btn dark">Login</button><div class="msg" hidden></div></form>
+  <div class="links"><a href="#/forgot">Forgot password?</a> · <a href="#/register">Create account</a></div></div>`);
+  $('#f').onsubmit = async e => { e.preventDefault(); try { user = (await api('/login', {method: 'POST', body: formData(e.target)})).user; renderAuthLinks(); toast('Welcome back, ' + user.name.split(' ')[0] + '!'); location.hash = user.role === 'admin' ? '#/admin' : after; after = '#/reserve'; } catch (x) { show(e.target.querySelector('.msg'), x.error || 'Login failed.'); } };
+}
+function registerView() {
+  V(`<div class="box"><h2>Create Account</h2><form id="f"><label>Full name</label><input name="name" required minlength="2">
+  <label>Email</label><input name="email" type="email" required><label>Phone</label><input name="phone" type="tel" placeholder="0712345678" required>
+  <label>Password</label><input name="password" type="password" required minlength="8" autocomplete="new-password"><label>Confirm password</label><input name="confirm" type="password" required autocomplete="new-password">
+  <button class="btn dark">Register</button><div class="msg" hidden></div></form><div class="links">Already registered? <a href="#/login">Login</a></div></div>`);
+  $('#f').onsubmit = async e => { e.preventDefault(); try { user = (await api('/register', {method: 'POST', body: formData(e.target)})).user; renderAuthLinks(); toast('Account created. Welcome!'); location.hash = after; } catch (x) { show(e.target.querySelector('.msg'), x.error || 'Registration failed.'); } };
+}
+function forgotView() {
+  V(`<div class="box"><h2>Reset Password</h2><form id="f"><label>Your email</label><input name="email" type="email" required><button class="btn dark">Send reset link</button><div class="msg" hidden></div></form></div>`);
+  $('#f').onsubmit = async e => { e.preventDefault(); try { show(e.target.querySelector('.msg'), (await api('/forgot', {method: 'POST', body: formData(e.target)})).message, 1); } catch (x) { show(e.target.querySelector('.msg'), x.error); } };
+}
+function resetView(token) {
+  V(`<div class="box"><h2>Choose a New Password</h2><form id="f"><label>New password</label><input name="password" type="password" required minlength="8"><button class="btn dark">Save password</button><div class="msg" hidden></div></form></div>`);
+  $('#f').onsubmit = async e => { e.preventDefault(); try { await api('/reset', {method: 'POST', body: {token, password: e.target.password.value}}); toast('Password updated. Please log in.'); location.hash = '#/login'; } catch (x) { show(e.target.querySelector('.msg'), x.error); } };
+}
+
+/* ---------- reservations ---------- */
+function reserveView() {
+  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+  if (cfg.reservations_open !== '1') return V(`<div class="box"><h2>Reservations</h2><p>Online reservations are currently closed. Please call <a href="tel:${esc(cfg.phone)}">${esc(cfg.phone)}</a>.</p></div>`);
+  V(`<div class="box wide"><h2>Reserve a Table</h2><form id="f">
+  <label>Name</label><input value="${esc(user.name)}" disabled>
+  <label>Contact phone</label><input name="phone" type="tel" required value="${esc(user.phone)}">
+  <div class="row"><div><label>Date</label><input name="date" type="date" min="${today}" required></div><div><label>Time</label><input name="time" type="time" step="900" required></div></div>
+  <div class="row"><div><label>Guests</label><input name="guests" type="number" min="1" max="20" value="2" required></div>
+  <div><label>Seating preference</label><select name="seating"><option value="">No preference</option><option>Indoor</option><option>Outdoor</option></select></div></div>
+  <label>Special requests (birthday, dietary needs)</label><textarea name="notes" rows="3" maxlength="500"></textarea>
+  <button class="btn dark">Request Reservation</button><div class="msg" hidden></div><div class="slots" id="slots"></div></form>
+  <p class="note">Your request stays <b>Pending</b> until the hotel confirms it.</p></div>`);
+  $('#f').onsubmit = async e => { e.preventDefault(); const m = e.target.querySelector('.msg'); $('#slots').innerHTML = '';
+    try { const d = await api('/reservations', {method: 'POST', body: formData(e.target)}); const b = formData(e.target);
+      V(`<div class="box"><h2>✅ Request Received</h2><p>Reference: <b style="font-size:1.3rem">${esc(d.ref)}</b></p><p>Status: <span class="badge Pending">Pending</span></p>
+      <p style="margin-top:10px">📅 ${esc(b.date)} at ${esc(b.time)}<br>👥 ${esc(b.guests)} guest(s)${b.seating ? '<br>🪑 ' + esc(b.seating) : ''}${b.notes ? '<br>📝 ' + esc(b.notes) : ''}</p>
+      <p class="note">${esc(d.message)} Keep your reference number.</p><a class="btn dark" href="#/my">My Bookings</a></div>`);
+    } catch (x) { show(m, x.error || 'Could not reserve.');
+      if (x.alternatives) $('#slots').innerHTML = x.alternatives.length ? '<p style="width:100%;font-size:.9rem">Available times that day:</p>' + x.alternatives.map(t => `<button type="button" class="btn sm" data-t="${t}">${t}</button>`).join('') : '<p style="font-size:.9rem">No tables free that day. Try another date.</p>'; } };
+  $('#view').onclick = e => { const t = e.target.dataset.t; if (t) { $('#f').time.value = t; $('#f').requestSubmit(); } };
+}
+async function myView() {
+  V('<div class="box wide"><h2>My Reservations</h2><div id="l">Loading…</div></div>');
+  const draw = async () => { const rs = await api('/reservations/mine');
+    $('#l').innerHTML = rs.length ? `<div class="scroll"><table class="tbl"><tr><th>Ref</th><th>Date</th><th>Time</th><th>Guests</th><th>Status</th><th></th></tr>${rs.map(r => `<tr><td>${esc(r.ref)}</td><td>${esc(r.res_date)}</td><td>${esc(r.res_time.slice(0, 5))}</td><td>${r.guests}</td><td><span class="badge ${r.status}">${r.status}</span></td><td>${['Pending', 'Confirmed'].includes(r.status) ? `<button class="btn sm red" data-c="${r.id}">Cancel</button>` : ''}</td></tr>`).join('')}</table></div><p class="note">To change a booking, cancel it and make a new request, or call ${esc(cfg.phone)}.</p>` : '<p>No reservations yet. <a href="#/reserve">Book a table</a></p>'; };
+  await draw();
+  $('#l').onclick = async e => { const id = e.target.dataset.c; if (id && confirm('Cancel this reservation?')) try { await api(`/reservations/${id}/cancel`, {method: 'POST'}); toast('Reservation cancelled.'); draw(); } catch (x) { fail(x); } };
+}
+
+/* ---------- admin ---------- */
+let tab = 'res';
+async function adminView() {
+  V(`<div style="padding:30px 0"><h2 style="color:var(--green);margin-bottom:14px">Admin Dashboard</h2><div class="tabs">${[['res', 'Reservations'], ['stats', 'Statistics'], ['menu', 'Menu'], ['gal', 'Gallery'], ['set', 'Settings']].map(([k, l]) => `<button class="chip ${tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div><div id="tab">Loading…</div></div>`);
+  $('#view').onclick = e => { if (e.target.dataset.tab) { tab = e.target.dataset.tab; adminView(); } };
+  try { await ({res: adminRes, stats: adminStats, menu: adminMenu, gal: adminGal, set: adminSet})[tab](); } catch (x) { fail(x); }
+}
+async function adminRes() {
+  $('#tab').innerHTML = `<form class="inline" id="flt"><div><label>Date</label><input type="date" name="date"></div><div><label>Reference</label><input name="ref"></div><div><label>Status</label><select name="status"><option value="">All</option>${['Pending', 'Confirmed', 'Rejected', 'Cancelled', 'Completed'].map(s => `<option>${s}</option>`).join('')}</select></div><button class="btn dark">Search</button></form><div class="scroll" id="rl"></div>`;
+  const load = async () => { const p = new URLSearchParams(formData($('#flt'))); [...p].forEach(([k, v]) => !v && p.delete(k)); const rs = await api('/admin/reservations?' + p);
+    $('#rl').innerHTML = `<table class="tbl"><tr><th>Ref</th><th>Customer</th><th>Contact</th><th>When</th><th>Guests</th><th>Notes</th><th>Status</th><th>Action</th></tr>${rs.map(r => `<tr><td>${esc(r.ref)}</td><td>${esc(r.name)}<br><small>${esc(r.email)}</small></td><td>${esc(r.phone)}</td><td>${esc(r.res_date)}<br>${esc(r.res_time.slice(0, 5))}</td><td>${r.guests}${r.seating ? '<br><small>' + esc(r.seating) + '</small>' : ''}</td><td>${esc(r.notes)}</td><td><span class="badge ${r.status}">${r.status}</span></td>
+    <td>${[['Confirmed', 'Confirm'], ['Rejected', 'Reject'], ['Completed', 'Done']].filter(([s]) => s !== r.status).map(([s, l]) => `<button class="btn sm ${s === 'Rejected' ? 'red' : 'dark'}" data-s="${s}" data-id="${r.id}">${l}</button>`).join(' ')}</td></tr>`).join('') || '<tr><td colspan="8">No reservations found.</td></tr>'}</table>`; };
+  $('#flt').onsubmit = e => { e.preventDefault(); load(); };
+  $('#rl').onclick = async e => { const b = e.target.closest('[data-s]'); if (b) try { await api('/admin/reservations/' + b.dataset.id, {method: 'PATCH', body: {status: b.dataset.s}}); toast('Updated.'); load(); } catch (x) { fail(x); } };
+  load();
+}
+async function adminStats() {
+  const s = await api('/admin/stats'); const n = k => (s.byStatus.find(x => x.status === k) || {n: 0}).n;
+  $('#tab').innerHTML = `<div class="stats">${[['Upcoming', s.upcoming], ['Pending', n('Pending')], ['Confirmed', n('Confirmed')], ['Completed', n('Completed')], ['Cancelled', n('Cancelled')], ['Customers', s.customers]].map(([l, v]) => `<div class="stat"><b>${v}</b>${l}</div>`).join('')}</div>`;
+}
+async function adminMenu() {
+  menu = await api('/menu'); const opts = (sel) => menu.categories.map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  $('#tab').innerHTML = `<form class="inline" id="nc"><div><label>New category</label><input name="name" required></div><button class="btn dark">Add</button></form>
+  <p style="margin-bottom:12px">${menu.categories.map(c => `<span class="badge">${esc(c.name)} <a href="#" data-dc="${c.id}" title="Delete category and its items">✕</a></span>`).join(' ')}</p>
+  <form class="inline" id="ni"><div><label>Category</label><select name="category_id">${opts()}</select></div><div><label>Name</label><input name="name" required></div><div><label>Price (KES)</label><input name="price" type="number" min="0" step="10" required></div><div><label>Emoji</label><input name="emoji" maxlength="4" value="🍽️"></div><div style="flex:3"><label>Description</label><input name="description"></div><div><label><input type="checkbox" name="featured" style="width:auto"> Featured</label><label><input type="checkbox" name="price_confirmed" style="width:auto"> Price confirmed</label></div><button class="btn dark">Add item</button></form>
+  <div class="scroll"><table class="tbl"><tr><th>Item</th><th>Category</th><th>Price</th><th>Flags</th><th></th></tr>${menu.items.map(i => `<tr><td>${esc(i.emoji)} ${esc(i.name)}<br><small>${esc(i.description)}</small></td><td><select data-f="category_id" data-id="${i.id}">${opts(i.category_id)}</select></td><td><input style="width:90px" type="number" data-f="price" data-id="${i.id}" value="${i.price}"></td><td><label><input type="checkbox" style="width:auto" data-f="featured" data-id="${i.id}" ${i.featured ? 'checked' : ''}>Featured</label><label><input type="checkbox" style="width:auto" data-f="price_confirmed" data-id="${i.id}" ${i.price_confirmed ? 'checked' : ''}>Confirmed</label></td><td><button class="btn sm red" data-di="${i.id}">Delete</button></td></tr>`).join('')}</table></div>`;
+  const done = async () => { await adminMenu(); renderMenu(); };
+  $('#nc').onsubmit = async e => { e.preventDefault(); try { await api('/admin/categories', {method: 'POST', body: formData(e.target)}); done(); } catch (x) { fail(x); } };
+  $('#ni').onsubmit = async e => { e.preventDefault(); const f = e.target, b = formData(f); b.featured = f.featured.checked; b.price_confirmed = f.price_confirmed.checked; try { await api('/admin/items', {method: 'POST', body: b}); toast('Item added.'); done(); } catch (x) { fail(x); } };
+  $('#tab').onchange = async e => { const id = e.target.dataset.id; if (!id || !e.target.dataset.f) return; const i = {...menu.items.find(x => x.id == id)}; i[e.target.dataset.f] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; try { await api('/admin/items/' + id, {method: 'PUT', body: i}); toast('Saved.'); menu = await api('/menu'); renderMenu(); } catch (x) { fail(x); } };
+  $('#tab').onclick = async e => { const di = e.target.dataset.di, dc = e.target.dataset.dc;
+    if (dc) { e.preventDefault(); if (confirm('Delete this category and ALL its items?')) { await api('/admin/categories/' + dc, {method: 'DELETE'}); done(); } }
+    if (di && confirm('Delete this item?')) { await api('/admin/items/' + di, {method: 'DELETE'}); done(); } };
+}
+async function adminGal() {
+  const g = await api('/gallery');
+  $('#tab').innerHTML = `<form class="inline" id="gu"><div><label>Photo (JPG/PNG/WebP, max 3MB)</label><input type="file" name="image" accept="image/jpeg,image/png,image/webp" required></div><div><label>Description (alt text)</label><input name="alt" required placeholder="e.g. Nyama choma served with kachumbari"></div><button class="btn dark">Upload</button></form>
+  <p class="note" style="text-align:left">Only upload photos you own or that are licensed for website use (including Canva images, per their licence).</p>
+  <div class="gal">${g.map(x => `<div><img src="/uploads/${encodeURIComponent(x.file)}" alt="${esc(x.alt_text)}"><button class="btn sm red" data-dg="${x.id}" style="margin-top:6px">Remove</button></div>`).join('') || '<p class="empty">No photos yet.</p>'}</div>`;
+  $('#gu').onsubmit = async e => { e.preventDefault(); try { await api('/admin/gallery', {method: 'POST', body: new FormData(e.target)}); toast('Photo uploaded.'); adminGal(); loadPublic(); } catch (x) { fail(x); } };
+  $('#tab').onclick = async e => { const d = e.target.dataset.dg; if (d && confirm('Remove this photo?')) { await api('/admin/gallery/' + d, {method: 'DELETE'}); adminGal(); loadPublic(); } };
+}
+async function adminSet() {
+  const s = await api('/admin/settings'), F = [['phone', 'Phone'], ['address', 'Address'], ['whatsapp', 'WhatsApp number (e.g. 254704519961, only if WhatsApp-enabled)'], ['map_url', 'Google Maps embed URL (Share → Embed a map → copy src)'], ['open_time', 'Opening time (HH:MM)'], ['close_time', 'Closing time (HH:MM)'], ['capacity', 'Seating capacity (guests at one time)'], ['cancel_hours', 'Customers can cancel online until X hours before']];
+  $('#tab').innerHTML = `<form class="box wide" style="margin:0" id="sf">${F.map(([k, l]) => `<label>${l}</label><input name="${k}" value="${esc(s[k])}">`).join('')}
+  <label>Show opening hours publicly</label><select name="show_hours"><option value="0" ${s.show_hours === '0' ? 'selected' : ''}>No</option><option value="1" ${s.show_hours === '1' ? 'selected' : ''}>Yes</option></select>
+  <label>Accept online reservations</label><select name="reservations_open"><option value="1" ${s.reservations_open === '1' ? 'selected' : ''}>Yes</option><option value="0" ${s.reservations_open === '0' ? 'selected' : ''}>No (paused)</option></select>
+  <button class="btn dark">Save settings</button></form>`;
+  $('#sf').onsubmit = async e => { e.preventDefault(); try { await api('/admin/settings', {method: 'PUT', body: formData(e.target)}); toast('Settings saved.'); loadPublic(); } catch (x) { fail(x); } };
+}
+
+/* ---------- start ---------- */
+$('#yr').textContent = new Date().getFullYear();
+(async () => { try { user = (await api('/me')).user; } catch {} renderAuthLinks(); await loadPublic().catch(() => toast('Could not load site content.')); route(); })();
+</script>
+</body>
+</html>
